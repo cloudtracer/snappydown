@@ -1,0 +1,64 @@
+{
+  "name": "snappydown",
+  "version": "0.0.1",
+  "description": "File system based implementation of leveldown with snappy compression",
+  "authors": [
+    "Matt.Brewer@cloud-tracer.com"
+  ],
+  "license": "MIT",
+  "main": "snappydown.js",
+  "scripts": {
+    "test": "standard && hallmark && (nyc -s node test.js | faucet) && nyc report",
+    "testfix": "standard --fix",
+    "test-browsers": "airtap --loopback airtap.local --coverage test.js",
+    "test-browser-local": "airtap --coverage --local test.js",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "hallmark": "hallmark --fix",
+    "dependency-check": "dependency-check . immediate*.js test.js",
+    "prepublishOnly": "npm run dependency-check"
+  },
+  "files": [
+    "memdown.js"
+  ],
+  "dependencies": {
+    "abstract-leveldown": "~6.2.1",
+    "functional-red-black-tree": "~1.0.1",
+    "immediate": "~3.2.3",
+    "inherits": "~2.0.1",
+    "ltgt": "~2.2.0",
+    "mkdirp": "^1.0.3",
+    "path": "^0.12.7",
+    "safe-buffer": "~5.2.0",
+    "snappyjs": "^0.6.0",
+    "write-file-atomic": "^3.0.3"
+  },
+  "devDependencies": {
+    "airtap": "^3.0.0",
+    "coveralls": "^3.0.2",
+    "dependency-check": "^3.3.0",
+    "faucet": "^0.0.1",
+    "hallmark": "^2.0.0",
+    "level-community": "^3.0.0",
+    "level-concat-iterator": "^2.0.0",
+    "nyc": "^14.0.0",
+    "standard": "^14.0.0",
+    "tape": "^4.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudtracer/snappydown.git"
+  },
+  "homepage": "https://github.com/cloudtracer/snappydown",
+  "keywords": [
+    "level",
+    "leveldb",
+    "leveldown",
+    "levelup",
+    "snappy",
+    "fs",
+    "filesystem"
+  ],
+  "engines": {
+    "node": ">=6"
+  }
+}
