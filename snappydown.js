@@ -135,7 +135,6 @@ SnappyIterator.prototype._next = function (callback) {
 
   key = this._tree.key
   value = this._tree.value
-
   if (!this._test(key)) return setImmediate(callback)
   var fileKey = this._fileKey(key)
   if (!this.keyAsBuffer) {
@@ -143,8 +142,11 @@ SnappyIterator.prototype._next = function (callback) {
   }
   if (fileKey) {
     try {
-      ReadFilePromise(fileKey, {}).then(function (value) {
-        if (this.valueAsBuffer) {
+      ReadFilePromise(fileKey, this._options).then(function (value) {
+        if (typeof value === 'undefined'){
+          callback(null, key, value)
+        }
+        if (!this.valueAsBuffer) {
           value = value.toString()
         }
         this._tree[this._incr]()
@@ -155,24 +157,10 @@ SnappyIterator.prototype._next = function (callback) {
       }.bind(this))
     } catch (err) {
       console.error(err)
-      if (this.valueAsBuffer) {
-        value = value.toString()
-      }
-      this._tree[this._incr]()
-
-      setImmediate(function callNext () {
-        callback(null, key, value)
-      })
+      return setImmediate(callback)
     }
   } else {
-    if (this.valueAsBuffer) {
-      value = value.toString()
-    }
-    this._tree[this._incr]()
-
-    setImmediate(function callNext () {
-      callback(null, key, value)
-    })
+    return setImmediate(callback)
   }
 }
 
@@ -234,7 +222,7 @@ function SnappyDown (options) {
   AbstractLevelDOWN.call({
     keysLoaded: true,
     bufferKeys: true,
-    snapshots: true,
+    snapshots: false,
     permanence: true,
     seek: true,
     clear: true
@@ -246,7 +234,7 @@ function SnappyDown (options) {
   this.supports.additionalMethods = {
     keysLoaded: true,
     bufferKeys: true,
-    snapshots: true,
+    snapshots: false,
     permanence: true,
     seek: true,
     clear: true
@@ -269,7 +257,7 @@ SnappyDown.prototype._open = function (options, callback) {
     this.location = path.join(cwdPath, options.name)
     if (isDebug) console.error(this.location + ' is set')
   }
-  this.location = path.join(cwdPath, 'in_memory')
+  this.location = path.join(cwdPath, 'in_memory'+counter)
   if (options && options.location) {
     this.location = path.join(cwdPath, options.location)
   }
@@ -304,6 +292,7 @@ SnappyDown.prototype.fetchAllKeys = function () {
     counter++
     if (isDebug) console.error('Counter called: ' + counter)
   }
+
 }
 SnappyDown.prototype._serializeKey = function (key) {
   return Buffer.isBuffer(key) ? key : Buffer.from(String(key))
@@ -372,6 +361,12 @@ SnappyDown.prototype._get = function (key, options, callback) {
   if (isDebug) console.error('_get: ' + key + ' - ' + fileKey)
   var value = this._store.get(key)
   if (isDebug) console.error(value)
+  if (isDebug) console.error(options)
+  if(typeof value === "undefined"){
+    return setImmediate(function callNext () {
+      callback(new Error('NotFound'))
+    })
+  }
   try {
     ReadFilePromise(fileKey, options).then(function (value) {
       if (typeof value === 'undefined') {
@@ -441,11 +436,14 @@ function ReadFilePromise (fileKey, options) {
         if (typeof value === 'undefined') {
           return resolve(value)
         }
+        if (isDebug) console.error(options)
         value = DecompressData(value)
         if (isDebug) console.error('After Read: ' + typeof value + ' - ' + value)
-        if (!options.asBuffer) {
-          value = value.toString()
+        if (options.asBuffer || options.valueAsBuffer) {
+          value = encode(value, false)
           if (isDebug) console.error(value)
+        } else {
+          value = value.toString()
         }
         return resolve(value)
       })
@@ -464,7 +462,6 @@ SnappyDown.prototype._batch = function (array, options, callback) {
   var len = array.length
   var tree = this._store
   var promises = []
-
   while (++i < len) {
     key = array[i].key
     iter = tree.find(key)

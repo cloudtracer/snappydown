@@ -2,4 +2,4 @@ node_modules
 coverage
 npm-debug.log
 .nyc_output
-in_memory
+in_memory*
